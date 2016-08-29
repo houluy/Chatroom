@@ -3,12 +3,14 @@ import threading
 
 max_byte = 1024
 ALL = 'all' #Broadcast
+con = threading.Condition()
 
 class Client():
     def __init__(self, name):
         #super(threading.Thread, self).__init__()
         self.name = name
         self.enable = False
+        self.connection = {}
 
     def connect(self, host='localhost', port=12344):
         try:
@@ -57,6 +59,7 @@ class Client():
         except:
             print('Error connecting to peer')
             return
+        
         #if (res == 'Success'):
         #    print('Connection with {} is successully established'.format(self.target))
         #else:
@@ -68,23 +71,45 @@ class Client():
         self.s.sendall(bytes(disconnect_str, encoding='utf8'))
         res = self.s.recv(max_byte)
 
-    def talk(self):
+    def send(self):
+        global con
+        con.acquire()
         self.connect_peer()
+        con.wait()
         while True:
-            data = input("Say:")
+            data = input()
             #Save the history
             if (data == 'quit'):
                 self.disconnect_peer()
             else:
                 self.s.sendall(bytes(data, encoding='utf8'))
+        con.release()
 
     def receive(self):
+        global con
+        con.acquire()
         while True:
             data = self.s.recv(max_byte).decode()
             if (data):
-                peer_name = data.split(':')[0]
-                words = ':'.join(data.split(':')[1:])
-                print("{} says: {}".format(peer_name, words))
+                data_slice = data.split(':')
+                if (data_slice[0] == 'name'):
+                    peer_name = data.split(':')[1]
+                    accept = input("{} wants to talk with you, accept? Y/N".format(peer_name))
+                    if (accept == 'Y') or (accept == 'y'):
+                        self.connection[peer_name] = 0
+                        try:
+                            self.s.sendall('accept:{}:Y'.format(peer_name).encode())
+                        except:
+                            print('Send error in receive function')
+                    else:
+                        pass
+                elif (data_slice[0] == 'accept'):
+                    peer_name = data.split(':')[1]
+                    self.connection[peer_name] = 1
+                    con.release()
+                else:
+                    words = ':'.join(data.split(':')[1:])
+                    print("{} says: {}".format(peer_name, words))
             else:
                 print("Empty content received")
                 continue
@@ -97,7 +122,7 @@ if __name__ == '__main__':
     client = Client(your_name)
     client.connect()
     threads = []
-    thread_talk = threading.Thread(target=client.talk)
+    thread_talk = threading.Thread(target=client.send)
     thread_receive = threading.Thread(target=client.receive)
     threads.append(thread_talk)
     threads.append(thread_receive)

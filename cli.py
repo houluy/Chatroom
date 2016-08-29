@@ -9,9 +9,9 @@ your_name = input('Pleas input your name:')
 client = Client(your_name)
 client.connect(object_host, object_port)
 threads = []
-thread_talk = threading.Thread(target=client.talk)
+thread_send = threading.Thread(target=client.send)
 thread_receive = threading.Thread(target=client.receive)
-threads.append(thread_talk)
+threads.append(thread_send)
 threads.append(thread_receive)
 
 for th in threads:
