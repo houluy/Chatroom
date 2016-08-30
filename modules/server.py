@@ -15,6 +15,8 @@ request_dic = {}
 
 relation_dic = {}
 
+online_list = []
+
 message_dic = {
     'Success':'successful',
     'Fail':'failed'
@@ -38,29 +40,27 @@ class TCPHandler(socketserver.BaseRequestHandler):
         while True:
             self.data = self.request.recv(max_byte)
             data_slice = self.data.decode().split(':')
+            logger.info('Original data:"{}"'.format(self.data.decode())) 
             if (data_slice[0] == 'setname'):
                 self.name = data_slice[1]
                 cur_thread = threading.current_thread()
                 logger.info('Set name with {}'.format(self.name))
                 request_dic[self.name] = self.request
+                online_list.append(self.name)
                 respond(self.request)
-            elif (data_slice[0] == 'target'):
-                self.target = data_slice[1]
-                target_request = request_dic.get(self.target)
-                if target_request:
-                    message = 'name:{}'.format(self.name)
-                    logger.info('{} wants to talk with {}'.format(self.name, self.target))
-                    respond(target_request, message, 'server')
-                else:
-                    respond(self.request, 'Fail')
-            elif (data_slice[0] == 'accept'):
-                accept_target = data_slice[1]
-                target_request = request_dic.get(accept_target)
-                target_request.sendall(self.data)
-                logger.info('{} accepts connection with {}'.format(self.name, self.target))
-            else:
-                message = '{}:{}'.format(self.name, self.data.decode())
-                respond(target_request, message, self.name, self.target)
+            elif (data_slice[0] == 'Online_list'):
+                logger.info('An online list request by {} is received'.format(self.name))
+                online_list_str = 'Online:' + ':'.join(online_list)
+                self.request.sendall(online_list_str.encode())
+            elif (data_slice[0] == ""):
+                logger.info('{} disconnects with server.'.format(self.name))
+                online_list.pop(self.name)
+            elif (data_slice[0] == "DATA"):
+                src_name = self.name
+                dst_name = data_slice[1]
+                dst_request = request_dic[dst_name]
+                message = '{}:{}'.format(src_name, ':'.join(data_slice[2:]))
+                respond(dst_request, message, src_name, dst_name)
                 #logger.info('{} says to {}: {}'.format(self.name, self.target, self.data.decode()))
                 #request_dic[self.target].sendall(''.join([self.name, ':', self.data.decode()]).encode())
                 #self.request.sendall(response)

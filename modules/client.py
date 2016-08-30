@@ -3,7 +3,7 @@ import threading
 
 max_byte = 1024
 ALL = 'all' #Broadcast
-con = threading.Condition()
+data_prefix = 'DATA:'
 
 class Client():
     def __init__(self, name):
@@ -37,6 +37,7 @@ class Client():
         res = self.s.recv(max_byte)
         if (res.decode() == 'Success'):
             print('Connection is established, your name is {}'.format(self.name))
+            print('Please type in "OL?" to get the online list first: ', end='')
         else:
             print('Error receive from servers!')
             print(res)
@@ -49,6 +50,14 @@ class Client():
             print('{} successfully'.format(command))
         else:
             print('Error command return')
+
+    def _analyze(self):
+        pass
+
+    def get_online_list(self):
+        self.s.sendall('Online_list'.encode())
+        #self.data = self.s.recv(max_byte).decode()
+        #data_slice = self.data.split(':')
 
     def connect_peer(self):
         self.target = input("Target name:")
@@ -72,59 +81,43 @@ class Client():
         res = self.s.recv(max_byte)
 
     def send(self):
-        global con
-        con.acquire()
-        self.connect_peer()
-        con.wait()
         while True:
-            data = input()
+            input_str = input()
             #Save the history
-            if (data == 'quit'):
+            if (input_str == 'quit'):
                 self.disconnect_peer()
+            elif (input_str == 'OL?'):
+                self.get_online_list()
             else:
-                self.s.sendall(bytes(data, encoding='utf8'))
-        con.release()
+            #Talk
+                input_slice = input_str.split(':')
+                target_name = input_slice[0]
+                #print('Says to {}: {}'.format(target_name, input_str))
+                self.s.sendall(bytes(data_prefix + input_str, encoding='utf8'))
 
     def receive(self):
-        global con
-        con.acquire()
         while True:
-            data = self.s.recv(max_byte).decode()
-            if (data):
-                data_slice = data.split(':')
-                if (data_slice[0] == 'name'):
-                    peer_name = data.split(':')[1]
-                    accept = input("{} wants to talk with you, accept? Y/N".format(peer_name))
-                    if (accept == 'Y') or (accept == 'y'):
-                        self.connection[peer_name] = 0
-                        try:
-                            self.s.sendall('accept:{}:Y'.format(peer_name).encode())
-                        except:
-                            print('Send error in receive function')
-                    else:
-                        pass
-                elif (data_slice[0] == 'accept'):
-                    peer_name = data.split(':')[1]
-                    self.connection[peer_name] = 1
-                    con.release()
-                else:
-                    words = ':'.join(data.split(':')[1:])
-                    print("{} says: {}".format(peer_name, words))
+            self.data = self.s.recv(max_byte)
+            data_slice = self.data.decode().split(':')
+            if (data_slice[0] == 'Online'): 
+                print('Online list: ' + str(data_slice[1:])) 
             else:
-                print("Empty content received")
-                continue
+                src_name = data_slice[0]
+                src_data = data_slice[1:]
+                print('{} says: {}'.format(src_name, ':'.join(src_data)))
 
     def __del__(self):
         self.s.close()
 
 if __name__ == '__main__':
-    your_name = input('Pleas input your name:')
+    your_name = input('Pleas input your name: ')
     client = Client(your_name)
     client.connect()
+    #client.get_online_list()
     threads = []
-    thread_talk = threading.Thread(target=client.send)
+    thread_send = threading.Thread(target=client.send)
     thread_receive = threading.Thread(target=client.receive)
-    threads.append(thread_talk)
+    threads.append(thread_send)
     threads.append(thread_receive)
 
     for th in threads:
