@@ -1,11 +1,11 @@
 from modules.server import ThreadedTCPServer, TCPHandler
 import threading
-import logging
+from modules.log import set_logger
 
 host = 'localhost'
 port = 12344
 
-logger = logging.getLogger('MainLogger')
+logger = set_logger('server')
 
 server = ThreadedTCPServer((host, port), TCPHandler)
 server_thread = threading.Thread(target=server.serve_forever)

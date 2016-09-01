@@ -1,13 +1,14 @@
 import socket
 import threading
+from log import set_logger
 
 max_byte = 1024
 ALL = 'all' #Broadcast
 data_prefix = 'DATA:'
+logger = set_logger('client')
 
 class Client():
     def __init__(self, name):
-        #super(threading.Thread, self).__init__()
         self.name = name
         self.enable = False
         self.connection = {}
@@ -22,7 +23,7 @@ class Client():
             return
         try:
             self.s.connect((host, port))
-            print('Connecting to server...')
+            logger.info('Connecting to server...')
         except:
             print('Server error!')
             self.s.close()
@@ -36,8 +37,9 @@ class Client():
             return
         res = self.s.recv(max_byte)
         if (res.decode() == 'Success'):
-            print('Connection is established, your name is {}'.format(self.name))
-            print('Please type in "OL?" to get the online list first: ', end='')
+            logger.info('Connection is established, your name is {}'.format(self.name))
+            print()
+            #print('Please type in "OL?" to get the online list first: ', end='')
         else:
             print('Error receive from servers!')
             print(res)
@@ -47,17 +49,20 @@ class Client():
         self.s.sendall(bytes(target_str, encoding='utf8'))
         res = self.s.recv(max_byte)
         if (res == 'Success'):
-            print('{} successfully'.format(command))
+            logger.info('{} successfully'.format(command))
         else:
             print('Error command return')
 
     def _analyze(self):
         pass
 
-    def get_online_list(self):
-        self.s.sendall('Online_list'.encode())
-        #self.data = self.s.recv(max_byte).decode()
-        #data_slice = self.data.split(':')
+    #Merge the following two functions--FIXME
+    def get_list(self, lst_name):
+        self.s.sendall(lst_name.encode())
+
+    #def create_group(self):
+    #    group_name = input("Please input the group name: ")
+    #    self.s.sendall('cgroup:' + group_name)
 
     def connect_peer(self):
         self.target = input("Target name:")
@@ -69,12 +74,6 @@ class Client():
             print('Error connecting to peer')
             return
         
-        #if (res == 'Success'):
-        #    print('Connection with {} is successully established'.format(self.target))
-        #else:
-        #    print('Error name')
-        #    return
-
     def disconnect_peer(self):
         disconnect_str = ''.join(['disconnect:', self.target])
         self.s.sendall(bytes(disconnect_str, encoding='utf8'))
@@ -83,24 +82,27 @@ class Client():
     def send(self):
         while True:
             input_str = input()
-            #Save the history
+            #Save the history--FIXME
             if (input_str == 'quit'):
                 self.disconnect_peer()
-            elif (input_str == 'OL?'):
-                self.get_online_list()
+            elif (input_str == 'OL?' or input_str == 'GP?'):
+                self.get_list(input_str)
             else:
             #Talk
                 input_slice = input_str.split(':')
-                target_name = input_slice[0]
-                #print('Says to {}: {}'.format(target_name, input_str))
-                self.s.sendall(bytes(data_prefix + input_str, encoding='utf8'))
+                if (input_slice[0] == 'cgroup' or input_slice[0] == 'egroup'):
+                    self.s.sendall(bytes(input_str, encoding='utf8'))
+                else:
+                    self.s.sendall(bytes('DATA:' + input_str, encoding='utf8'))
 
     def receive(self):
         while True:
             self.data = self.s.recv(max_byte)
             data_slice = self.data.decode().split(':')
-            if (data_slice[0] == 'Online'): 
-                print('Online list: ' + str(data_slice[1:])) 
+            if (data_slice[0] == 'Online' or data_slice[0] == 'Group'): 
+                print(data_slice[0] + ' list: ' + str(data_slice[1:])) 
+            elif (data_slice[0] == 'command'):
+                print(':'.join(data_slice[1:]))
             else:
                 src_name = data_slice[0]
                 src_data = data_slice[1:]
