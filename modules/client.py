@@ -74,7 +74,7 @@ class Client():
             data = self.s.recv(max_byte)
             data_dic = json.loads(data.decode())
             if (data_dic.get('Response') == 'Online' or data_dic.get('Response') == 'Group'): 
-                print('List: ' + str(data_dic.get('Value'))) 
+                print('List: ' + str(data_dic.get('Value')).replace(':', ', ')) 
             elif (data_dic.get('Response') == 'Conf'):
                 print(data_dic.get('Value'))
             else:
