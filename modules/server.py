@@ -55,29 +55,40 @@ def query_func(query_obj, client_name):
     logger.info('{} {} list query request from {} is received'.format(article, query_str, client_name))
     return result
 
+def check_dup_name(name, name_list):
+    if name in name_list:
+        logger.info('Name: {} already exists'.format(name))
+        return True 
+    else:
+        return False
 
 class TCPHandler(socketserver.BaseRequestHandler):
-    def handle_command(self, msg, command):
+    def handle_command(self, msg):
+        command = msg.get('Command')
+        value = msg.get('Value')
         if (command == 'SN'):
             #Set name
-            self.name = msg.get('Value')
-            #Check duplication of name
-            logger.info('Set name with {}'.format(self.name))
-            request_dic[self.name] = self.request
-            online_list.append(self.name)
-            respond(self.request)
+            if check_dup_name(value, online_list):
+                respond(self.request, 'Conf', 'Name {} already exists'.format(value), 'server', self.name)
+            else:
+                self.name = value
+                logger.info('Set name with {}'.format(self.name))
+                request_dic[self.name] = self.request
+                online_list.append(self.name)
+                respond(self.request)
         elif (command == 'OL?' or command == 'GP?'):
             respond(self.request, command_dic[command], query_func(command_dic[command], self.name), 'server', self.name)
         elif (command == "CG"):#create group
-            group_name = msg.get('Value')
-            #Check duplication of group name--FIXME
+            if check_dup_name(value, group_list):
+                respond(self,request, 'Conf', 'Name {} already exists'.format(value), 'server', self.name)
+            group_name = value
             group_list.append(group_name)
             group_dic[group_name] = []
             group_dic[group_name].append(self.name)
             message = 'Group {} has been created successfully'.format(group_name)
             respond(self.request, 'Conf', message, 'server', self.name)
         elif (command == 'EG'):#enter group
-            group_name = msg.get('Value')
+            group_name = value
             if (group_name not in group_list):
                 message = 'Group {} has not been created yet'.format(group_name)
                 respond(self.request, 'Conf', message, 'server', self.name)
@@ -85,12 +96,46 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 group_dic[group_name].append(self.name)
                 message = 'You have successfully entered group {}'.format(group_name)#Also respond with group info--FIXME
                 respond(self.request, 'Conf', message, 'server', self.name)
+        elif (command == 'CN'):#Change name
+            new_name = value
+            online_list.remove(self.name)
+            online_list.append(new_name)
+            request_dic[new_name] = request_dic.pop(self.name)
+            self.name = new_name
+            message = 'Your name has been changed to {} successfully'.format(self.name) 
+            respond(self.request, 'Conf', message, 'server', self.name)
+        elif (command == 'CP'):#Change group name
+            old_name = value.split(':')[0]
+            if old_name not in group_list:
+                message = 'There is no group with name {}'.format(old_name)
+                respond(self.request, 'Conf', message, 'server', self.name)
+            else:
+                new_name = value.split(':')[1]
+                group_list.remove(old_name)
+                group_list.append(new_name)
+                group_dic[new_name] = group_dic.pop(old_name)
+                message = 'Group name has been changed to {} successfull'.format(new_name)
+                respond(self.request, 'Conf', message, 'server', self.name)
+                #Inform all the clients in this group
+                msg['Dest'] = new_name
+                msg['Message'] = 'Group name {} has been changed to {} by {}.'.format(old_name, new_name, self.name)
+                self.distribute_msg(msg)
+        elif (command == 'QG'):
+            group_name = value
+            if group_name not in group_list:
+                message = 'No such group exists'
+                respond(self.request, 'Conf', message, 'server', self.name)
+            elif self.name not in group_dic[group_name]:
+                message = "You haven't entered group {}".format(group_name)
+                respond(self.request, 'Conf', message, 'server', self.name)
+            else:
+                group_dic[group_name].remove(self.name)
+                message = "You have successfully leave the group {}".format(group_name)
+                respond(self.request, 'Conf', message, 'server', self.name)
         elif (command == ""):
             pass
-            #logger.info('{} disconnects with server.'.format(self.name))
-            #online_list.pop(self.name)
 
-    def distribute_msg(self, msg, src):
+    def distribute_msg(self, msg):
         src_name = self.name
         dst_name = msg.get('Dest')
         message = msg.get('Message')
@@ -114,9 +159,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
             logger.info('Original data:"{}"'.format(msg)) 
             command = msg.get('Command')
             if (command):
-                self.handle_command(msg, command)
+                self.handle_command(msg)
             elif (command == None):
-                self.distribute_msg(msg, self.name)
+                self.distribute_msg(msg)
                                 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass

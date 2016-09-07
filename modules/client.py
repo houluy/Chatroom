@@ -1,12 +1,12 @@
 import socket
 import threading
-from log import set_logger
+from modules.log import set_logger
 import json
 
 max_byte = 1024
 ALL = 'all' #Broadcast
-data_prefix = 'DATA:'
 logger = set_logger('client')
+command_list = ['CG', 'EG', 'CN', 'CP', 'QG']
 
 class Client():
     def __init__(self, name):
@@ -51,17 +51,29 @@ class Client():
         #Save the history--FIXME
         msg = {}
         input_slice = input_str.split(':')
-        if (input_slice[0] == 'quit'):
-            self.disconnect_peer()
-        elif (input_slice[0] == 'OL?' or input_slice[0] == 'GP?'):
+        command = input_slice[0].upper()
+        if (command == 'QUIT'):
+            pass
+            #self.disconnect_peer()
+        elif (command == 'OL?' or command == 'GP?'):
             msg['Command'] = input_str
-        elif (input_slice[0] == 'CG' or input_slice[0] == 'EG'):
-            msg['Command'] = input_slice[0]
-            msg['Value'] = input_slice[1]
+        elif command in command_list:
+            msg['Command'] = command
+            msg['Value'] = ':'.join(input_slice[1:])
         else:
             msg['Message'] = input_slice[1]
             msg['Dest'] = input_slice[0]
         return json.dumps(msg)
+
+    def _analyze_receive(self, data_dic):
+        if (data_dic.get('Response') == 'Online' or data_dic.get('Response') == 'Group'): 
+            print('List: ' + str(data_dic.get('Value')).replace(':', ', ')) 
+        elif (data_dic.get('Response') == 'Conf'):
+            print(data_dic.get('Value'))
+        else:
+            msg = data_dic.get('Message')
+            src_name = data_dic.get('Source')
+            print('{} says: {}'.format(src_name, msg))
 
     def send(self):
         while True:
@@ -73,15 +85,8 @@ class Client():
         while True:
             data = self.s.recv(max_byte)
             data_dic = json.loads(data.decode())
-            if (data_dic.get('Response') == 'Online' or data_dic.get('Response') == 'Group'): 
-                print('List: ' + str(data_dic.get('Value')).replace(':', ', ')) 
-            elif (data_dic.get('Response') == 'Conf'):
-                print(data_dic.get('Value'))
-            else:
-                msg = data_dic.get('Message')
-                src_name = data_dic.get('Source')
-                print('{} says: {}'.format(src_name, msg))
-
+            self._analyze_receive(data_dic)
+            
     def __del__(self):
         self.s.close()
 
