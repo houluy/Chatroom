@@ -10,6 +10,8 @@ max_byte = 1024
 
 request_dic = {}
 
+object_dic = {}
+
 relation_dic = {}
 
 online_list = []
@@ -22,7 +24,7 @@ message_dic = {
 
 group_dic = {}
 
-command_dic = {'OL?':'Online', 'GP?':'Group'}
+query_dic = {'OL?':'Online', 'GP?':'Group', 'BL?':'Black'}
 
 logger = set_logger('server')
 
@@ -32,7 +34,7 @@ def respond(sock, command='Conf', message='Success', src_name='', target=''):
         logger.info('Response from server')#: request is {}'.format(message_dic[message]))
         msg['Response'] = command
         msg['Value'] = message
-    elif (command == 'Online' or command == 'Group'):
+    elif command in query_dic.values():
         #log out specific message--FIXME
         logger.info('Server command responding')
         msg['Response'] = command
@@ -42,18 +44,6 @@ def respond(sock, command='Conf', message='Success', src_name='', target=''):
         msg['Message'] = message
         msg['Source'] = src_name
     sock.sendall(json.dumps(msg).encode())
-
-def query_func(query_obj, client_name):
-    if (query_obj == 'Online'):
-        query_str = 'online'
-        article = 'An'
-        result = ':'.join(online_list)
-    elif (query_obj == 'Group'):
-        query_str = 'group'
-        article = 'A'
-        result = ':'.join(group_list)
-    logger.info('{} {} list query request from {} is received'.format(article, query_str, client_name))
-    return result
 
 def check_dup_name(name, name_list):
     if name in name_list:
@@ -74,10 +64,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 self.name = value
                 logger.info('Set name with {}'.format(self.name))
                 request_dic[self.name] = self.request
+                object_dic[self.name] = self
                 online_list.append(self.name)
                 respond(self.request)
-        elif (command == 'OL?' or command == 'GP?'):
-            respond(self.request, command_dic[command], query_func(command_dic[command], self.name), 'server', self.name)
+        elif command in query_dic.keys():
+            respond(self.request, query_dic[command], self.query_func(query_dic[command], self.name), 'server', self.name)
         elif (command == "CG"):#create group
             if check_dup_name(value, group_list):
                 respond(self,request, 'Conf', 'Name {} already exists'.format(value), 'server', self.name)
@@ -132,16 +123,41 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 group_dic[group_name].remove(self.name)
                 message = "You have successfully leave the group {}".format(group_name)
                 respond(self.request, 'Conf', message, 'server', self.name)
+        elif (command == 'BL'):
+            self.black_list += value.split(':')    
+            message = "You have moved {} to the blacklist, you will no longer hear from he/she".format(value)
+            respond(self.request, 'Conf', message, 'server', self.name)
         elif (command == ""):
             pass
+
+    def query_func(self, query_obj, client_name):
+        if (query_obj == 'Online'):
+            query_str = 'online'
+            article = 'An'
+            result = ':'.join(online_list)
+        elif (query_obj == 'Group'):
+            query_str = 'group'
+            article = 'A'
+            result = ':'.join(group_list)
+        elif (query_obj == 'Black'):
+            query_str = 'black'
+            article = 'A'
+            result = ':'.join(self.black_list)
+        logger.info('{} {} list query request from {} is received'.format(article, query_str, client_name))
+        return result
 
     def distribute_msg(self, msg):
         src_name = self.name
         dst_name = msg.get('Dest')
         message = msg.get('Message')
         if (dst_name in online_list):
-            dst_request = request_dic[dst_name]
-            respond(dst_request, 'Data', message, src_name, dst_name)
+            #Check black list
+            if src_name not in object_dic[dst_name].black_list:
+                dst_request = request_dic[dst_name]
+                respond(dst_request, 'Data', message, src_name, dst_name)
+            else:
+                message = 'You are in the target\'s black list!'
+                respond(self.request, 'Conf', message, src_name, dst_name)
         elif (dst_name in group_list):
             for dst_temp in group_dic[dst_name]:
                 if (dst_temp == self.name):
@@ -149,10 +165,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 dst_request = request_dic[dst_temp]
                 respond(dst_request, 'Data', message, src_name, dst_name) 
         else:
-        #Error group name--FIXME
-            pass
+            message = 'Target user or group does not exist!'
+            respond(self.request, 'Conf', message, 'server', self.name)
 
     def handle(self):
+        self.black_list = []
         while True:
             data = self.request.recv(max_byte)
             msg = json.loads(data.decode())

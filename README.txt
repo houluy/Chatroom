@@ -21,6 +21,7 @@ This is a preliminary version that only simple chatting function is supported. C
 6. Client can send messages to any user they want, format: '<name>:<msg>', e.g., 'Mary: hello'
 7. Client can change their name by command: 'CN:<new_name>'.
 
+
 [Group talk]
 
 1. Any client can create a non-existing group by typing: 'CG:<name>'
@@ -31,6 +32,9 @@ This is a preliminary version that only simple chatting function is supported. C
 6. Clients in a group can leave the group by command: 'QG:<group>'.
 
 [Black list]
+
+1. Client can move some one to its blacklist so that it will not hear from the one, command: 'BL:<name1>:<name2>...'.
+2. By simply typing: 'BL?', clients can check their black lists.
 
 JSON Structure:
 
@@ -46,11 +50,13 @@ Client:
 Command includes:
 OL?                         : Get current online list
 GP?                         : Get current chatting group
+BL?                         : Get black list
 CG:<name>                   : Create a new group
 EG:<name>                   : Enter a group
 CN:<name>                   : Change name
 QG:<group>                  : Quit a group
 CP:<old_group>:<new_group>  : Change group name
+BL:<name1>:<name2>...       : Move name1... to the black list
 
 Server:
 {

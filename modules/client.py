@@ -6,7 +6,8 @@ import json
 max_byte = 1024
 ALL = 'all' #Broadcast
 logger = set_logger('client')
-command_list = ['CG', 'EG', 'CN', 'CP', 'QG']
+command_list = ['CG', 'EG', 'CN', 'CP', 'QG', 'BL']
+query_list = ['OL?', 'GP?', 'BL?', 'Online', 'Group', 'Black']
 
 class Client():
     def __init__(self, name):
@@ -55,7 +56,7 @@ class Client():
         if (command == 'QUIT'):
             pass
             #self.disconnect_peer()
-        elif (command == 'OL?' or command == 'GP?'):
+        elif command in query_list:
             msg['Command'] = input_str
         elif command in command_list:
             msg['Command'] = command
@@ -66,7 +67,7 @@ class Client():
         return json.dumps(msg)
 
     def _analyze_receive(self, data_dic):
-        if (data_dic.get('Response') == 'Online' or data_dic.get('Response') == 'Group'): 
+        if data_dic.get('Response') in query_list:
             print('List: ' + str(data_dic.get('Value')).replace(':', ', ')) 
         elif (data_dic.get('Response') == 'Conf'):
             print(data_dic.get('Value'))
