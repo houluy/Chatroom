@@ -43,6 +43,7 @@ def respond(sock, command='Conf', message='Success', src_name='', target=''):
         logger.info('{} says to {}: {}'.format(src_name, target, message))
         msg['Message'] = message
         msg['Source'] = src_name
+        msg['Dest'] = target
     sock.sendall(json.dumps(msg).encode())
 
 def check_dup_name(name, name_list):
@@ -56,8 +57,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
     def handle_command(self, msg):
         command = msg.get('Command')
         value = msg.get('Value')
-        if (command == 'SN'):
-            #Set name
+        if (command == 'SN'):#Set name
             if check_dup_name(value, online_list):
                 respond(self.request, 'Conf', 'Name {} already exists'.format(value), 'server', self.name)
             else:
@@ -87,7 +87,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 group_dic[group_name].append(self.name)
                 message = 'You have successfully entered group {}'.format(group_name)#Also respond with group info--FIXME
                 respond(self.request, 'Conf', message, 'server', self.name)
-        elif (command == 'CN'):#Change name
+        elif (command == 'CN'):#change name
             new_name = value
             online_list.remove(self.name)
             online_list.append(new_name)
@@ -95,7 +95,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self.name = new_name
             message = 'Your name has been changed to {} successfully'.format(self.name) 
             respond(self.request, 'Conf', message, 'server', self.name)
-        elif (command == 'CP'):#Change group name
+        elif (command == 'CP'):#change group name
             old_name = value.split(':')[0]
             if old_name not in group_list:
                 message = 'There is no group with name {}'.format(old_name)
@@ -111,7 +111,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 msg['Dest'] = new_name
                 msg['Message'] = 'Group name {} has been changed to {} by {}.'.format(old_name, new_name, self.name)
                 self.distribute_msg(msg)
-        elif (command == 'QG'):
+        elif (command == 'QG'):#quit group
             group_name = value
             if group_name not in group_list:
                 message = 'No such group exists'
@@ -123,7 +123,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 group_dic[group_name].remove(self.name)
                 message = "You have successfully leave the group {}".format(group_name)
                 respond(self.request, 'Conf', message, 'server', self.name)
-        elif (command == 'BL'):
+        elif (command == 'BL'):#black list
             self.black_list += value.split(':')    
             message = "You have moved {} to the blacklist, you will no longer hear from he/she".format(value)
             respond(self.request, 'Conf', message, 'server', self.name)
@@ -190,5 +190,3 @@ if __name__ == '__main__':
     server_thread.damon = True
     server_thread.start()
     print("Server loop running in thread:", server_thread)
-    #server.shutdown()
-    #server.server_close()

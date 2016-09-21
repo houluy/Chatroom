@@ -1,7 +1,7 @@
-# Chatroom
+# Chatroom #
 A free chatroom for CLI by Python
 
-This is a chatroom software that can run in CLI in Linux. Users can firstly run chat_server.py. Then, multi-clients can be started and chat
+This is a chatroom software that can run in CLI in Linux. Users can firstly run chat\_server.py. Then, multi-clients can be started and chat
 with each other. 
 
 This is a preliminary version that only simple chatting function is supported. Coming soon...
@@ -19,7 +19,7 @@ This is a preliminary version that only simple chatting function is supported. C
 4. Client can get an online list from server by command: 'OL?'
 5. Server returns an online list which shows all the current users, format: 'Online:<name1>:<name2>...'
 6. Client can send messages to any user they want, format: '<name>:<msg>', e.g., 'Mary: hello'
-7. Client can change their name by command: 'CN:<new_name>'.
+7. Client can change their name by command: 'CN:< new\_name >'.
 
 
 [Group talk]
@@ -28,7 +28,7 @@ This is a preliminary version that only simple chatting function is supported. C
 2. By command 'GP?', clients can check the existing group, format: 'Group:<group1>:<group2>...'
 3. 'EG:<name>' enables a client to enter the group with <name>
 4. Client can send messages to a group just as to common users: '<group>:<msg>', all clients that have entered the group can receive the msg. 
-5. Group clients can change the group name by command: 'CP:<old_name>:<new_name>'.
+5. Group clients can change the group name by command: 'CP:< old\_name >:< new\_name >'.
 6. Clients in a group can leave the group by command: 'QG:<group>'.
 
 [Black list]
@@ -39,7 +39,6 @@ This is a preliminary version that only simple chatting function is supported. C
 JSON Structure:
 
 Client:
-
 {
     Command: <command>,
     Value: <val>,
@@ -64,6 +63,7 @@ Server:
     Value: <val>,
     Message: <msg>,
     Source: <name>,
+    Dest: <name>,
 }
 
 Command includes:
@@ -71,3 +71,6 @@ Online      : Online list
 Group       : Group list
 Conf        : State of configuration (Success or Failure)
 Data        : Chatting data
+
+Author Email:
+<houlu@lucima.cn>

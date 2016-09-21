@@ -1,4 +1,4 @@
-from modules.client import Client
+from modules.client import Client, threads
 import threading
 import logging
 
@@ -8,11 +8,8 @@ object_port = 12344
 your_name = input('Pleas input your name:')
 client = Client(your_name)
 client.connect(object_host, object_port)
-threads = []
-thread_send = threading.Thread(target=client.send)
-thread_receive = threading.Thread(target=client.receive)
-threads.append(thread_send)
-threads.append(thread_receive)
+client.send()
+client.receive()
 
 for th in threads:
     th.setDaemon(True)
