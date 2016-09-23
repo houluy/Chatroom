@@ -53,21 +53,21 @@ This is a chatroom software that can run in CLI in Linux. Users can firstly run 
 </font>
 
 Command includes:    
-　　+	OL?                         	    : Get current online list  
-　　+	GP?                         		: Get current chatting group  
-　　+	BL?                         		: Get black list  
-    +   SN:\<name\>                         : Rename  
-　　+	CG:\<group\_name\>                  : Create a new group  
-　　+	EG:\<group\_name\>                  : Enter a group  
-　　+	CN:\<name\>                  		: Change name  
-　　+	QG:\<group\_name\>                  : Quit a group  
-　　+	CP:\<old\_group\>:\<new\_group\>    : Change group name  
-　　+	BL:\<name1\>:\<name2\>...           : Move name1... to the black list  
-    +   MG:\<msg in JSON\>  
-        -   dst:\<name\>    : Destination name   
-        -   flt:\<type\>    : File type if a file is delivered  
-        -   msg:\<message\> : Message or file   
-        -   tim:\<time\>    : Time
++	OL?                         	    : Get current online list  
++	GP?                         		: Get current chatting group  
++	BL?                         		: Get black list    
++   SN:\<name\>                         : Rename  
++	CG:\<group\_name\>                  : Create a new group  
++	EG:\<group\_name\>                  : Enter a group  
++	CN:\<name\>                  		: Change name  
++	QG:\<group\_name\>                  : Quit a group  
++	CP:\<old\_group\>:\<new\_group\>    : Change group name  
++	BL:\<name1\>:\<name2\>...           : Move name1... to the black list  
++   MG:\<msg in JSON\>     
+    -   dst:\<name\>    : Destination name   
+    -   flt:\<type\>    : File type if a file is delivered  
+    -   msg:\<message\> : Message or file   
+    -   tim:\<time\>    : Time  
 
 _All Commands are case insensitive_  
 
@@ -79,15 +79,15 @@ _All Commands are case insensitive_
 </font>
 
 Command includes:  
-　　+	Online      : Online list    
-　　+	Group       : Group list  
-    +   Black       : Black list
-　　+	Resp        : Response of some command (Success or Failure)  
-　　+	Message     : Message in JSON:  
-        -   src:\<name\>    : Source  
-        -   dst:\<name\>    : Destination  
-        -   flt:\<type\>    : File type if a file is delivered  
-        -   msg:\<message\> : Message or file  
-        -   tim:\<time\>    : Time
++	Online      : Online list    
++	Group       : Group list  
++   Black       : Black list
++	Resp        : Response of some command (Success or Failure)  
++	Message     : Message in JSON:  
+    -   src:\<name\>    : Source  
+    -   dst:\<name\>    : Destination  
+    -   flt:\<type\>    : File type if a file is delivered  
+    -   msg:\<message\> : Message or file  
+    -   tim:\<time\>    : Time
 
 </font>
