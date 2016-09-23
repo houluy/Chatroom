@@ -1,7 +1,8 @@
 import socket
 import threading
-from modules.log import set_logger
+from modules.utils import *
 import json
+import time
 
 max_byte = 1024
 ALL = 'all' #Broadcast
@@ -9,19 +10,19 @@ logger = set_logger('client')
 command_list = ['CG', 'EG', 'CN', 'CP', 'QG', 'BL']
 query_list = ['OL?', 'GP?', 'BL?', 'Online', 'Group', 'Black']
 
-threads = []
-
-def threaded(fn):
-    def wrapper(*args, **kwargs):
-        th = threading.Thread(target=fn, args=args, kwargs=kwargs)
-        threads.append(th)
-    return wrapper
-
 class Client():
     def __init__(self, name):
         self.name = name
         self.enable = False
         self.connection = {}
+
+    def _print_msg(self, src, dst, msg, timestamp):
+        time_str = time.asctime(time.localtime(timestamp))
+        if (dst == self.name):
+            print('[{}] {} says to you: {}'.format(time_str, src, msg))
+        else:
+            print('[{}] {} says in group <{}>: {}'.format(time_str, src, dst, msg))
+
 
     def connect(self, host='localhost', port=12344):
         try:
@@ -37,6 +38,7 @@ class Client():
             logger.error('Server error!')
             self.s.close()
             return
+        #Change to a register process--TODO
         msg = {}
         msg['Command'] = 'SN'
         msg['Value'] = self.name
@@ -62,7 +64,7 @@ class Client():
         logger.info('Bye Bye')
                 
     def _analyze_input(self, input_str):
-        #Save the history--FIXME
+        #Save the history--TODO
         msg = {}
         input_slice = input_str.split(':')
         command = input_slice[0].upper()
@@ -75,43 +77,51 @@ class Client():
             msg['Command'] = command
             msg['Value'] = ':'.join(input_slice[1:])
         else:
-            msg['Dest'] = input_slice[0]
+            command = 'MG'
+            msg['Command'] = command
+            message = dict(dst=input_slice[0])
             if (input_slice[1].upper() == 'FILE'):
                 #Send file
-                #Check file path--FIXME
-                msg['Message'] = ':'.join('FILE', self._read_file(input_slice[2]))
+                #Check file path--TODO
+                #Transferred meaning of FILE--TODO
+                filename = input_slice[2]
+                file_type = get_suffix(filename)
+                file_dat = read_file(filename)
+                message.update(flt=file_type, msg=file_dat, tim=time.time())
             else:
-                msg['Message'] = input_slice[1]
-        self.s.sendall(json.dumps(msg).encode())
-        return 0
+                message.update(flt=None, msg=input_slice[1])
+            msg.update(Value=message)
+        return msg
 
     def _analyze_receive(self, data_dic):
-        if data_dic.get('Response') in query_list:
-            print('{} List: '.format(data_dic.get('Response')) + str(data_dic.get('Value')).replace(':', ', ')) 
-        elif (data_dic.get('Response') == 'Conf'):
-            print(data_dic.get('Value'))
+        logger.info('Original data: {}'.format(str(data_dic)))
+        command = data_dic.get('Command')
+        message = data_dic.get('Value')
+        if command in query_list:
+            print('{} List: '.format(command) + str(message).replace(':', ', ')) 
+        elif (command == 'Resp'):
+            print(message)
         else:
-            msg = data_dic.get('Message')
-            msg_slice = msg.split(':')
-            #if (msg_slice[0].upper() == 'FILE'):
-            src_name = data_dic.get('Source')
-            dst_name = data_dic.get('Dest')
-            if (dst_name == self.name):
-                print('{} says to you: {}'.format(src_name, msg))
+            src_name = message.get('src')
+            dst_name = message.get('dst')
+            file_type = message.get('flt')
+            data = message.get('msg')
+            timestamp = message.get('tim')
+            if file_type:
+                print('{} sends a {} file to you, check at default directory'.format(src_name, file_type))
+                print(data)
             else:
-                print('{} says in group <{}>: {}'.format(src_name, dst_name, msg))
-
-    def _read_file(self, filename):
-        with open(filename, 'r') as f:
-            return f.read()
+                self._print_msg(src_name, dst_name, data, timestamp)
 
     @threaded
     def send(self):
         while True:
             input_str = input()
-            data = self._analyze_input(input_str)
-            if (data == -1):
+            msg = self._analyze_input(input_str)
+            if (msg == -1):
                 break
+            else:
+                self.s.sendall(json.dumps(msg).encode())
     
     @threaded
     def receive(self):
