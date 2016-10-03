@@ -24,7 +24,8 @@ message_dic = {
 
 group_dic = {}
 
-query_dic = {'OL?':'Online', 'GP?':'Group', 'BL?':'Black'}
+query_dic = {'OL?':'Online', 'GP?':'Group', 'BL?':'Black', 'GM?':'Game'}
+game_list = ['gomoku', 'tictactoe', 'fourinarow']
 
 logger = set_logger('server')
 
@@ -133,6 +134,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
             query_str = 'black'
             article = 'A'
             result = ':'.join(self.black_list)
+        elif (query_obj == 'Game'):
+            query_str = 'game'
+            article = 'A'
+            result = ':'.join(game_list)
         logger.info('{} {} list query request from {} is received'.format(article, query_str, client_name))
         return result
 
@@ -140,9 +145,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
         src_name = self.name
         dst_name = message.get('dst')
         file_type = message.get('flt')
+        game_name = message.get('gme')
         data = message.get('msg')
         timestamp = message.get('tim')
-        reply_msg = dict(src=src_name, dst=dst_name, flt=file_type, msg=data, tim=timestamp)
+        reply_msg = dict(src=src_name, dst=dst_name, flt=file_type, msg=data, tim=timestamp, gme=game_name)
         reply_pac = dict(Command='MG', Value=reply_msg)
         reply = json.dumps(reply_pac).encode()
         if (dst_name in online_list):

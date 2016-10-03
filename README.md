@@ -15,6 +15,7 @@ This is a chatroom software that can run in CLI in Linux. Users can firstly run 
 [Sept. 08. 2016] Add (1)change group name; (2)leave group; (3)change client name; (4)bug fix.  
 [Sept. 21. 2016] Use Markdown to build the README file.  
 [Sept. 22. 2016] Re-design the communication protocol.  
+[Oct.  03. 2016] Start to add games in chatroom
 
 ### [Interaction process]  
 
@@ -41,21 +42,35 @@ This is a chatroom software that can run in CLI in Linux. Users can firstly run 
 1. Client can move some one to its blacklist so that it will not hear from the one, command: 'BL:\<name1\>:\<name2\>...'.
 2. By simply typing: 'BL?', clients can check their black lists.  
 
+### [Gaming]
+
+1. Clients can play games with others by command: '\<name\>:PLAY:\<game_name\>'.
+2. When your friend agrees to play, he/she will take the first step.
+3. Current game list:
+    - Gomoku
+    - TicTacToe
+    - FourInARow
+    - Customized line-in-a-row game
+
+### [Voting]
+
+_(TODO)_
+
 --- 
 
 ## JSON Structure:
-
-<font face="Courier New" color="0x993399">Client:  
+```
+Client:
 {  
-　　Command: \<command\>,  
-　　Value: \<val\>,  
+    Command: <command>,  
+    Value: <val>,  
 }  
-</font>
-
+```
 Command includes:    
 +	OL?                         	    : Get current online list  
 +	GP?                         		: Get current chatting group  
 +	BL?                         		: Get black list    
++   GM?                                 : Get game list
 +   SN:\<name\>                         : Rename  
 +	CG:\<group\_name\>                  : Create a new group  
 +	EG:\<group\_name\>                  : Enter a group  
@@ -66,18 +81,18 @@ Command includes:
 +   MG:\<msg in JSON\>     
     -   dst:\<name\>    : Destination name   
     -   flt:\<type\>    : File type if a file is delivered  
+    -   gme:\<game\>    : Game name if you want to play a game
     -   msg:\<message\> : Message or file   
     -   tim:\<time\>    : Time  
 
 _All Commands are case insensitive_  
-
-<font face="Courier New" color="0x993399">Server:  
+```
+Server:
 {  
-　　Command: \<command\>,  
-　　Value: \<val\>,  
+    Command: <command>,  
+    Value: <val>,  
 }  
-</font>
-
+```
 Command includes:  
 +	Online      : Online list    
 +	Group       : Group list  
@@ -87,6 +102,7 @@ Command includes:
     -   src:\<name\>    : Source  
     -   dst:\<name\>    : Destination  
     -   flt:\<type\>    : File type if a file is delivered  
+    -   gme:\<game\>    : Game name if you want to play a game
     -   msg:\<message\> : Message or file  
     -   tim:\<time\>    : Time
 

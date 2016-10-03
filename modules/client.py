@@ -8,7 +8,7 @@ max_byte = 1024
 ALL = 'all' #Broadcast
 logger = set_logger('client')
 command_list = ['CG', 'EG', 'CN', 'CP', 'QG', 'BL']
-query_list = ['OL?', 'GP?', 'BL?', 'Online', 'Group', 'Black']
+query_list = ['OL?', 'GP?', 'BL?', 'GM?', 'Online', 'Group', 'Black', 'Game']
 
 class Client():
     def __init__(self, name):
@@ -22,7 +22,6 @@ class Client():
             print('[{}] {} says to you: {}'.format(time_str, src, msg))
         else:
             print('[{}] {} says in group <{}>: {}'.format(time_str, src, dst, msg))
-
 
     def connect(self, host='localhost', port=12344):
         try:
@@ -80,7 +79,8 @@ class Client():
             command = 'MG'
             msg['Command'] = command
             message = dict(dst=input_slice[0])
-            if (input_slice[1].upper() == 'FILE'):
+            subcom = input_slice[1].upper()
+            if (subcom == 'FILE'):
                 #Send file
                 #Check file path--TODO
                 #Transferred meaning of FILE--TODO
@@ -88,8 +88,11 @@ class Client():
                 file_type = get_suffix(filename)
                 file_dat = read_file(filename)
                 message.update(flt=file_type, msg=file_dat, tim=time.time())
+            elif (subcom == 'PLAY'):
+                gamename = input_slice[2]
+                message.update(flt=None, gme=gamename)
             else:
-                message.update(flt=None, msg=input_slice[1])
+                message.update(flt=None, msg=subcom)
             msg.update(Value=message)
         return msg
 
@@ -106,10 +109,13 @@ class Client():
             dst_name = message.get('dst')
             file_type = message.get('flt')
             data = message.get('msg')
+            game_name = message.get('gme')
             timestamp = message.get('tim')
             if file_type:
                 print('{} sends a {} file to you, check at default directory'.format(src_name, file_type))
                 print(data)
+            elif game_name:
+                print('{} wants to play {} with you'.format(src_name, game_name))
             else:
                 self._print_msg(src_name, dst_name, data, timestamp)
 
