@@ -3,6 +3,7 @@ import threading
 from modules.utils import *
 import json
 import time
+from modules.chessboard.game import Game
 
 max_byte = 1024
 ALL = 'all' #Broadcast
@@ -13,8 +14,7 @@ query_list = ['OL?', 'GP?', 'BL?', 'GM?', 'Online', 'Group', 'Black', 'Game']
 class Client():
     def __init__(self, name):
         self.name = name
-        self.enable = False
-        self.connection = {}
+        self.game = {}
 
     def _print_msg(self, src, dst, msg, timestamp):
         time_str = time.asctime(time.localtime(timestamp))
@@ -116,8 +116,16 @@ class Client():
                 print(data)
             elif game_name:
                 print('{} wants to play {} with you'.format(src_name, game_name))
+                new_game = Game(game=game_name)
+                self.game[src_name][game_name] = new_game
+                new_game.print_pos()
             else:
                 self._print_msg(src_name, dst_name, data, timestamp)
+    
+    ##def play(self, coordinate, player, game_name):
+    ##    try:
+    ##        self.game.get(player).get(game_name).set_pos(coordinate
+
 
     @threaded
     def send(self):
