@@ -1,20 +1,22 @@
 import socket
 import threading
-from modules.utils import *
+from .utils import *
 import json
 import time
-from modules.chessboard.game import Game
+import collections
+from .chessboard.game import Game
 
 max_byte = 1024
 ALL = 'all' #Broadcast
 logger = set_logger('client')
 command_list = ['CG', 'EG', 'CN', 'CP', 'QG', 'BL']
 query_list = ['OL?', 'GP?', 'BL?', 'GM?', 'Online', 'Group', 'Black', 'Game']
+game_list = ['FOURINAROW', 'GOMOKU', 'TICTACTOE']
 
 class Client():
     def __init__(self, name):
         self.name = name
-        self.game = {}
+        self.game = collections.defaultdict(dict)
 
     def _print_msg(self, src, dst, msg, timestamp):
         time_str = time.asctime(time.localtime(timestamp))
@@ -78,9 +80,10 @@ class Client():
         else:
             command = 'MG'
             msg['Command'] = command
-            message = dict(dst=input_slice[0])
-            subcom = input_slice[1].upper()
-            if (subcom == 'FILE'):
+            dest = input_slice[0]
+            message = dict(dst=dest)
+            subcom = input_slice[1]
+            if (subcom.upper() == 'FILE'):
                 #Send file
                 #Check file path--TODO
                 #Transferred meaning of FILE--TODO
@@ -88,11 +91,19 @@ class Client():
                 file_type = get_suffix(filename)
                 file_dat = read_file(filename)
                 message.update(flt=file_type, msg=file_dat, tim=time.time())
-            elif (subcom == 'PLAY'):
+            elif (subcom.upper() == 'PLAY'):
                 gamename = input_slice[2]
-                message.update(flt=None, gme=gamename)
+                message.update(gme=gamename)
+                new_game = Game(game=gamename)
+                self.game[dest][gamename] = [new_game, 1]
+            elif (subcom.upper() in game_list):
+                move = input_slice[2]
+                result = self.game[dest][subcom][0].place(move)
+                if (result):
+                    self._print_game_res(self.game[dest][subcom][1], result)
+                message.update(msg=':'.join(input_slice[1:]))
             else:
-                message.update(flt=None, msg=subcom)
+                message.update(msg=':'.join(input_slice[1:]))
             msg.update(Value=message)
         return msg
 
@@ -109,24 +120,27 @@ class Client():
             dst_name = message.get('dst')
             file_type = message.get('flt')
             data = message.get('msg')
-            game_name = message.get('gme')
+            gamename = message.get('gme')
             timestamp = message.get('tim')
             if file_type:
                 print('{} sends a {} file to you, check at default directory'.format(src_name, file_type))
                 print(data)
-            elif game_name:
-                print('{} wants to play {} with you'.format(src_name, game_name))
-                new_game = Game(game=game_name)
-                self.game[src_name][game_name] = new_game
+            elif gamename:
+                print('{} wants to play {} with you'.format(src_name, gamename))
+                new_game = Game(game=gamename)
+                self.game[src_name][gamename] = [new_game, 2]
                 new_game.print_pos()
             else:
-                self._print_msg(src_name, dst_name, data, timestamp)
+                data_slice = data.split(':')
+                if (data_slice[0].upper() in game_list):
+                    move = data_slice[1]
+                    gamename = data_slice[0]
+                    result = self.game[src_name][gamename][0].place(move)
+                    if (result):
+                        self._print_game_res(self.game[src_name][gamename][1], result)
+                else:
+                    self._print_msg(src_name, dst_name, data, timestamp)
     
-    ##def play(self, coordinate, player, game_name):
-    ##    try:
-    ##        self.game.get(player).get(game_name).set_pos(coordinate
-
-
     @threaded
     def send(self):
         while True:
@@ -146,6 +160,12 @@ class Client():
             
     def __del__(self):
         self.s.close()
+
+    def _print_game_res(self, seq, result):
+        if (result == seq):
+            print('You win!')
+        elif (result != seq):
+            print('You lose!')
 
 if __name__ == '__main__':
     your_name = input('Pleas input your name: ')

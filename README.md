@@ -46,9 +46,10 @@ This is a chatroom software that can run in CLI in Linux. Users can firstly run 
 
 1. Clients can play games with others by command: '\<name\>:PLAY:\<game_name\>'.
 2. When your friend agrees to play, he/she will take the first step.
-3. For line-in-a-row games, you can send your move by command: '\<name\>:<\game\_name\>:(\<move\>)'. For example, if you 
-    want to put a chess piece at place (A, 9) when plays Gomoku with Mary, just typing: `mary:Gomoku:(A, 9)`.
-4. Current game list:
+3. For line-in-a-row games, you can send your move by command: '\<name\>:<\game\_name\>:\<move\>'. For example, if you 
+    want to put a chess piece at place (A, 9) when plays Gomoku with Mary, just typing: `mary:Gomoku:A, 9`.  
+4. Clients can check current state of the game by command: '\<name\>:<\game\_name\>'.  
+5. Current game list:
     - Gomoku
     - TicTacToe
     - FourInARow

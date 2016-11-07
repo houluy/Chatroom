@@ -1,6 +1,9 @@
 from modules.client import Client, threads
 import threading
 import logging
+import sys
+
+sys.path.append('/home/houlu/Programs/Python/chatroom/Chatroom/modules')
 
 object_host = 'localhost'
 object_port = 12344

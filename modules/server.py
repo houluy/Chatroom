@@ -3,7 +3,7 @@ import threading
 import socketserver
 import time
 import json
-from modules.log import set_logger
+from .log import set_logger
 
 max_conn = 100
 max_byte = 1024
