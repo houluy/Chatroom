@@ -15,7 +15,8 @@ This is a chatroom software that can run in CLI in Linux. Users can firstly run 
 [Sept. 08. 2016] Add (1)change group name; (2)leave group; (3)change client name; (4)bug fix.  
 [Sept. 21. 2016] Use Markdown to build the README file.  
 [Sept. 22. 2016] Re-design the communication protocol.  
-[Oct.  03. 2016] Start to add games in chatroom
+[Oct.  03. 2016] Start to add games in chatroom.  
+[Nov.  07. 2016] Finish adding chess games in chatroom.  
 
 ### [Interaction process]  
 

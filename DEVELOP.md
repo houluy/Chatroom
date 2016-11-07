@@ -6,8 +6,8 @@
 ```
     self.game = {
         'name': {
-            'game_name': game_instance,
-            'game_name2': game_instance2,
+            'game_name': [game_instance, player_seq],
+            'game_name2': [game_instance2, player_seq],
             ...
         }
     }
